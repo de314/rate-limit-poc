@@ -19,13 +19,17 @@ class Runner {
     return new Promise((resolve, rej) => {
       axios
         .get(request.url) // TODO: non GET's
-        .then(res => resolve(res))
-        .catch(err =>
+        .then(res => {
+          console.log(res)
+          resolve(res)
+        })
+        .catch(err => {
+          console.log(err)
           resolve({
             err,
             data: null,
           })
-        )
+        })
     })
       .then(res => {
         const duration = new Date().getTime() - startTime
@@ -36,7 +40,7 @@ class Runner {
             duration,
             data: res.data,
             request,
-          })
+          }),
         )
       })
       .then(exe => {
@@ -66,18 +70,30 @@ class Runner {
 
 class PerfRunner {
   constructor(runConfig) {
+    this.id = uuid()
     this.runConfig = runConfig
     this.requests = runConfig.exeDurr.map(({ value }) => ({
-      url: `http://localhost:8080/fib/calc/${value}`,
+      url: `http://localhost:8080/rl/fib/calc/${value}`,
     }))
     this.running = false
+    this.isDone = false
     this.runnerProcessCount = Math.ceil(runConfig.count / runConfig.concurrency)
+    this.expectedCount = this.runnerProcessCount * runConfig.concurrency
     this.runners = _.range(runConfig.concurrency).map(
-      i => new Runner(this.runnerProcessCount, this.requests, i)
+      i => new Runner(this.runnerProcessCount, this.requests, i),
     )
   }
 
+  isRunning() {
+    return this.running
+  }
+
   start() {
+    if (this.running) {
+      return
+    }
+    this.running = true
+    const startTime = new Date().getTime()
     return Promise.all(this.runners.map(r => r.start())).then(runnerResults => {
       const mappedResults = {}
       let totalReqTime = 0
@@ -103,13 +119,27 @@ class PerfRunner {
         meanDur: totalReqTime / totalReqs,
       }
 
-      return new Promise(resolve =>
+      return new Promise(resolve => {
+        this.running = false
         resolve({
+          startTime,
+          runId: uuid(),
+          runnerId: this.id,
           results: mappedResults,
           summary,
         })
-      )
+      })
     })
+  }
+
+  getProgress() {
+    const complete = _.sumBy(this.runners, 'index') - this.runConfig.concurrency
+    return {
+      complete,
+      total: this.expectedCount,
+      percentage: complete / this.expectedCount,
+      percentageInt: Math.floor(complete / this.expectedCount * 100),
+    }
   }
 
   stop() {
@@ -117,11 +147,13 @@ class PerfRunner {
   }
 }
 
-const testConfig = {
-  exeDurr: [3, 16].map(value => ({ value })),
-  count: 10,
-  concurrency: 2,
-}
-new PerfRunner(testConfig).start().then(res => console.log(JSON.stringify(res.summary, null, 2)))
+// const testConfig = {
+//   exeDurr: [3, 16].map(value => ({ value })),
+//   count: 10,
+//   concurrency: 2,
+// }
+// new PerfRunner(testConfig)
+//   .start()
+//   .then(res => console.log(JSON.stringify(res.summary, null, 2)))
 
 export default PerfRunner
