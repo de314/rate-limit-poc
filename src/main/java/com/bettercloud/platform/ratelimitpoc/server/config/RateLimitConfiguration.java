@@ -25,6 +25,11 @@ public class RateLimitConfiguration {
     private String path;
 
     /**
+     * the requester header key
+     */
+    private String requesterIdHeaderKey;
+
+    /**
      * Define the rate limit buckets and limiting constraints
      */
     private List<RateLimitConstraintConfig> constraints = Lists.newArrayList();

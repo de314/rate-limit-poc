@@ -54,21 +54,6 @@ public class RateLimitPocApplication {
 
         };
     }
-
-    @Bean
-    public CommandLineRunner filterPrinter(RestTemplate restTemplate) {
-        return args -> {
-            for (int i=0;i<100;i++) {
-                ResponseEntity<String> res = restTemplate.getForEntity("http://localhost:9090/rl/fib/calc/1", String.class);
-                HttpStatus statusCode = res.getStatusCode();
-                System.out.println();
-                log.info("statusCode = " + statusCode);
-                res.getHeaders().entrySet().stream()
-                        .filter(e -> e.getKey().startsWith("X-Rate-Limit"))
-                        .forEach(e -> log.info("{}: {}", e.getKey(), e.getValue()));
-            }
-        };
-    }
 }
 
 

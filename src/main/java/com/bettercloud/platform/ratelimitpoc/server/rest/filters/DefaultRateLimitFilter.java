@@ -4,6 +4,7 @@ import com.bettercloud.platform.ratelimitpoc.server.config.RateLimitConstraint;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -19,12 +20,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
-public class LocalRateLimitFilter extends OncePerRequestFilter {
+public class DefaultRateLimitFilter extends OncePerRequestFilter {
 
     public static final RateLimitConstraint DEFAULT_GLOBAL_CONSTRAINT = RateLimitConstraint.builder()
             .name("default-global")
-            .value(10L)
-            .timeUnit(TimeUnit.MINUTES)
+            .value(-1L)
+            .timeUnit(TimeUnit.DAYS)
             .rawIdPattern(".*")
             .idPattern(Pattern.compile(".*"))
             .build();
@@ -35,13 +36,17 @@ public class LocalRateLimitFilter extends OncePerRequestFilter {
             .build();
     public static final long NO_OP_BUCKET_COUNT = Integer.MIN_VALUE + 1;
 
-    private final Cache<String, RateLimitConstraint> recentConstrantsCache;
+    private final Cache<String, RateLimitConstraint> recentConstraintsCache;
     private final List<RateLimitConstraint> constraints;
     private final RateLimitCache rateLimitCache;
     private final RateLimitConstraint defaultConstraint;
+    private final String requesterIdHeader;
 
-    public LocalRateLimitFilter(List<RateLimitConstraint> constraints, RateLimitCache rateLimitCache) {
-        this.recentConstrantsCache = CacheBuilder.newBuilder()
+    public DefaultRateLimitFilter(List<RateLimitConstraint> constraints, RateLimitCache rateLimitCache,
+            @Value("${bc.rest.filters.rate-limit.requesterIdHeaderKey:X-Rate-Limit-ID}")
+            String requesterIdHeader) {
+        this.requesterIdHeader = requesterIdHeader;
+        this.recentConstraintsCache = CacheBuilder.newBuilder()
                 .expireAfterAccess(30, TimeUnit.SECONDS)
                 .build();
         this.constraints = constraints.isEmpty() ? Lists.newArrayList(DEFAULT_GLOBAL_CONSTRAINT) : constraints;
@@ -64,10 +69,10 @@ public class LocalRateLimitFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String configKey = Optional.ofNullable(request.getHeader("X-BC-Rate-Limit-ID"))
+        String configKey = Optional.ofNullable(request.getHeader(requesterIdHeader))
                 .orElse("global");
 
-        RateLimitConstraint constraint = Optional.ofNullable(recentConstrantsCache.getIfPresent(configKey))
+        RateLimitConstraint constraint = Optional.ofNullable(recentConstraintsCache.getIfPresent(configKey))
                 .orElse(defaultConstraint);
         for (RateLimitConstraint c : constraints) {
             Matcher matcher = c.getIdPattern().matcher(configKey);

@@ -1,6 +1,6 @@
 package com.bettercloud.platform.ratelimitpoc.server.config;
 
-import com.bettercloud.platform.ratelimitpoc.server.rest.filters.LocalRateLimitFilter;
+import com.bettercloud.platform.ratelimitpoc.server.rest.filters.DefaultRateLimitFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class RateLimitConfig {
 
     @Bean
-    public FilterRegistrationBean rateLimitFilterRegistration(LocalRateLimitFilter rateLimitFilter, RateLimitConfiguration rateLimitConfiguration) {
+    public FilterRegistrationBean rateLimitFilterRegistration(DefaultRateLimitFilter rateLimitFilter, RateLimitConfiguration rateLimitConfiguration) {
         if (rateLimitConfiguration.isEnabled()) {
             String path = Optional.ofNullable(rateLimitConfiguration.getPath()).orElse("/*");
             log.info("Applying BC rate limit filter at {}", path);

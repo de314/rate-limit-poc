@@ -1,9 +1,14 @@
+spring:
+  application:
+    name: my-test-client-micro
+
 management.security.enabled: false
 server.port: 9090
 
 bc.rest.filters.rateLimit:
   enabled: true
   path: /rl/*
+  requesterIdHeaderKey: 'X-Rate-Limit-ID'
   constraints:
     - name: assets
       value: 2
@@ -14,4 +19,3 @@ bc.rest.filters.rateLimit:
     - { name: workflows, value: 5, timeUnit: MINUTES, rawIdPattern: "(ae|wf|workflows?)" }
     - { name: core, value: -1, timeUnit: HOURS, rawIdPattern: "^core.*" }
     - { name: testing, value: 5, timeUnit: MINUTES, rawIdPattern: .* }
-
