@@ -1,0 +1,17 @@
+management.security.enabled: false
+server.port: 9090
+
+bc.rest.filters.rateLimit:
+  enabled: true
+  path: /rl/*
+  constraints:
+    - name: assets
+      value: 2
+      timeUnit: MINUTES
+      rawIdPattern: ^.*assets.*$
+    - { name: directory, value: 8, timeUnit: MINUTES, rawIdPattern: ".*directory.*" }
+    - { name: ledger, value: 2, timeUnit: MINUTES, rawIdPattern: "shared-ledger-micro" }
+    - { name: workflows, value: 5, timeUnit: MINUTES, rawIdPattern: "(ae|wf|workflows?)" }
+    - { name: core, value: -1, timeUnit: HOURS, rawIdPattern: "^core.*" }
+    - { name: testing, value: 5, timeUnit: MINUTES, rawIdPattern: .* }
+

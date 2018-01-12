@@ -6,11 +6,11 @@ import { compose, withHandlers, withProps, withState } from 'recompose'
 import './RunnersList.css'
 
 let RunnerTile = ({ runner, isRunning, start, progress, remove }) => (
-  <div className={classnames('RunnerTile col p-3', { running: isRunning })}>
+  <div className="col p-3">
     <div
-      className="p-3"
+      className={classnames('RunnerTile p-3', { running: isRunning })}
       style={{
-        maxWidth: '350px',
+        maxWidth: '450px',
         border: '1px solid #ccc',
         position: 'relative',
       }}
@@ -22,6 +22,7 @@ let RunnerTile = ({ runner, isRunning, start, progress, remove }) => (
       >
         <i className="fa fa-trash" />
       </button>
+      <div className="h5">{runner.name}</div>
       <div>
         <b>Id:</b> <code>{runner.id}</code>
       </div>
@@ -34,9 +35,9 @@ let RunnerTile = ({ runner, isRunning, start, progress, remove }) => (
       <div>
         <b>Requests:</b>
         <ul className="ml-3">
-          {runner.runConfig.exeDurr.map((req, i) => (
+          {runner.runConfig.reqDefs.map((def, i) => (
             <li key={i}>
-              {req.label}: <code>{req.value}</code>
+              {def.method}:<code>{def.url}</code>
             </li>
           ))}
         </ul>

@@ -71,10 +71,12 @@ class Runner {
 class PerfRunner {
   constructor(runConfig) {
     this.id = uuid()
+    this.name = runConfig.name
     this.runConfig = runConfig
-    this.requests = runConfig.exeDurr.map(({ value }) => ({
-      url: `http://localhost:8080/rl/fib/calc/${value}`,
-    }))
+    this.requests = runConfig.reqDefs.filter(r => r.active)
+    if (this.requests.length === 0) {
+      this.requests = runConfig.reqDefs
+    }
     this.running = false
     this.isDone = false
     this.runnerProcessCount = Math.ceil(runConfig.count / runConfig.concurrency)

@@ -1,5 +1,7 @@
 import React from 'react'
+import _ from 'lodash'
 import PerfRunner from './PerfRunner'
+import uuid from 'uuid'
 
 import { compose, withHandlers, withState } from 'recompose'
 
@@ -49,16 +51,22 @@ const App = ({
   </div>
 )
 
-const defaultRunConfigs = {
+const defaultRunConfigs = (
+  name = `Runner #${Math.ceil(Math.random() * 1000)}`,
+) => ({
+  name,
   concurrency: 10,
   count: 30,
-  exeDurr: exeDurationOptions.slice(1, 2), //exeDurationOptions.slice(1, 3),
-}
+  reqDefs: [
+      { active: true, method: 'get', url: 'http://localhost:9090/fib/calc/40' },
+      { active: true, method: 'get', url: 'http://localhost:9090/rl/fib/calc/40' },
+  ],
+})
 
-const defaultRunner = new PerfRunner(defaultRunConfigs)
+const defaultRunner = new PerfRunner(defaultRunConfigs())
 
 export default compose(
-  withState('runConfigs', 'setRunConfigs', defaultRunConfigs),
+  withState('runConfigs', 'setRunConfigs', defaultRunConfigs()),
   withState('disabled', 'setDisabled', false),
   withState('perfRunners', 'setPerfRunners', [defaultRunner]),
   withState('results', 'setResults', []),
@@ -72,11 +80,13 @@ export default compose(
       perfRunners,
       setPerfRunners,
     }) => () => {
+      const config = _.cloneDeep(runConfigs)
+      config.reqDefs = config.reqDefs.filter(r => r.active)
       // a little debounce action... which is probably not needed
-      if (!disabled) {
+      if (!disabled && config.reqDefs.length !== 0) {
         setDisabled(true)
         setTimeout(() => setDisabled(false), 750)
-        setPerfRunners([new PerfRunner(runConfigs), ...perfRunners])
+        setPerfRunners([new PerfRunner(config), ...perfRunners])
       }
     },
     removePerfRunner: ({ perfRunners, setPerfRunners }) => runner => {
